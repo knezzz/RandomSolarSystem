@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:cardCornerRadius="2dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <android.support.v7.widget.CardView
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="6dp"
+        app:cardElevation="1dp"
+        app:cardCornerRadius="2dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <RelativeLayout
+            android:id="@+id/planet_listener"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <RelativeLayout
+                android:gravity="center"
+                android:layout_width="100dp"
+                android:layout_height="100dp">
+            <android.support.v7.widget.CardView
+                android:id="@+id/planet_view"
+                android:transitionName="planetView"
+                app:cardCornerRadius="25dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"/>
+            </RelativeLayout>
+
+            <LinearLayout
+                android:id="@+id/info_layout"
+                android:orientation="vertical"
+                android:layout_marginLeft="120dp"
+                android:layout_width="match_parent"
+                android:paddingBottom="20dp"
+                android:paddingTop="20dp"
+                android:weightSum="3"
+                android:gravity="center_vertical"
+                android:layout_height="100dp">
+                <TextView
+                    android:id="@+id/planet_name"
+                    tools:text="Planet name"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif-smallcaps"
+                    android:layout_width="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_height="0dp" />
+
+                <TextView
+                    android:id="@+id/planet_info"
+                    tools:text="Planet info"
+                    android:fontFamily="sans-serif-condensed"
+                    android:layout_width="wrap_content"
+                    android:gravity="center"
+                    android:layout_weight="1"
+                    android:layout_height="0dp" />
+
+                <TextView
+                    android:id="@+id/planet_more_info"
+                    tools:text="Planet more info"
+                    android:fontFamily="sans-serif-condensed"
+                    android:layout_width="wrap_content"
+                    android:gravity="center"
+                    android:layout_weight="1"
+                    android:layout_height="0dp" />
+            </LinearLayout>
+
+      <!--      <LinearLayout
+                android:layout_margin="4dp"
+                android:layout_alignParentRight="true"
+                android:layout_alignBottom="@id/info_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+                <android.support.v7.widget.CardView
+                    android:id="@+id/planet_water_switch"
+                    app:cardBackgroundColor="@color/planet_info_false"
+                    android:layout_margin="2dp"
+                    app:cardCornerRadius="2dp"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"/>
+                <android.support.v7.widget.CardView
+                    android:id="@+id/planet_simple_life_switch"
+                    app:cardBackgroundColor="@color/planet_info_false"
+                    android:layout_margin="2dp"
+                    app:cardCornerRadius="2dp"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"/>
+                <android.support.v7.widget.CardView
+                    android:id="@+id/planet_complex_life_switch"
+                    app:cardBackgroundColor="@color/planet_info_false"
+                    android:layout_margin="2dp"
+                    app:cardCornerRadius="2dp"
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"/>
+            </LinearLayout>-->
+
+            <LinearLayout
+                android:layout_alignBottom="@id/info_layout"
+                android:weightSum="3"
+                android:layout_width="match_parent"
+                android:layout_height="20dp">
+                <View
+                    android:id="@+id/planet_water_shadow"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"/>
+                <View
+                    android:id="@+id/planet_simple_life_shadow"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"/>
+                <View
+                    android:id="@+id/planet_complex_life_shadow"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"/>
+            </LinearLayout>
+
+        </RelativeLayout>
+    </android.support.v7.widget.CardView>
+</LinearLayout>

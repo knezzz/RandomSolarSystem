@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="draw_counter_color">#8b8b8b</color>
+
+    <color name="planet_info_true">#43a047</color>
+    <color name="planet_info_false">#d50000</color>
+
+
+    <color name="planet_info_shadow_true">#3618de21</color>
+    <color name="planet_info_shadow_false">#36ff3d3d</color>
+</resources>

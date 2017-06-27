@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/part_of_universe"
+        app:actionLayout="@layout/nav_drawer_counter"
+        android:icon="@drawable/ic_menu_camera"
+        android:title="@string/part_of_universe" />
+
+    <item
+        android:id="@+id/superCluster"
+        app:actionLayout="@layout/nav_drawer_counter"
+        android:icon="@drawable/ic_menu_gallery"
+        android:title="@string/supercluster" />
+    <item
+        android:id="@+id/cluster"
+        app:actionLayout="@layout/nav_drawer_counter"
+        android:icon="@drawable/ic_menu_slideshow"
+        android:title="@string/cluster" />
+
+    <item android:title="@string/almost_there">
+        <menu>
+            <item
+                android:id="@+id/galaxy"
+                app:actionLayout="@layout/nav_drawer_counter"
+                android:icon="@drawable/ic_menu_slideshow"
+                android:title="@string/galaxy" />
+
+            <item
+                android:id="@+id/star"
+                app:actionLayout="@layout/nav_drawer_counter"
+                android:icon="@drawable/ic_menu_share"
+                android:title="@string/star" />
+        </menu>
+    </item>
+
+</menu>

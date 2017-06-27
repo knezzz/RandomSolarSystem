@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/find_O"
+        android:title="@string/type_o"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/find_B"
+        android:title="@string/type_b"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/find_A"
+        android:title="@string/type_a"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/find_F"
+        android:title="@string/type_f"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/get_qr_code"
+        android:title="@string/get_qr"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/scan_qr_code"
+        android:title="@string/scan_qr"
+        app:showAsAction="never" />
+</menu>

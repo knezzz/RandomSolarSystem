@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:paddingBottom="24dp"
+    android:layout_height="wrap_content">
+
+    <android.support.v7.widget.CardView
+        android:id="@+id/sun"
+        android:transitionName="solarSun"
+        android:layout_centerHorizontal="true"
+        android:layout_width="350dp"
+        android:layout_height="350dp"/>
+
+    <TextView
+        android:id="@+id/sunInfo"
+        android:layout_marginTop="20dp"
+        android:layout_below="@id/sun"
+        android:gravity="center"
+        android:fontFamily="sans-serif-light"
+        android:textStyle="italic"
+        android:textSize="14sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</RelativeLayout>
