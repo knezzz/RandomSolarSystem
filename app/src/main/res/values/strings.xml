@@ -1,26 +1,27 @@
 <resources>
+    <string name="leak_canary_display_activity_label">Random Solar Leaks</string>
     <string name="app_name">Random Solar System</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="action_settings">Settings</string>
-
     <string name="type_o">Find type O star</string>
     <string name="type_b">Find type B star</string>
     <string name="type_a">Find type A star</string>
     <string name="type_f">Find type F star</string>
+    <string name="type_g">Find type G star</string>
+    <string name="type_k">Find type K star</string>
 
     <string name="get_qr">Get QR Code</string>
     <string name="scan_qr">Scan QR Code</string>
-    <string name="wrong_qr">Wrong QR code...\n</string>
+    <string name="wrong_qr">Wrong QR code…\n</string>
     <string name="qr_code">QR Code</string>
     <string name="total_number_of_combinations">450,359,962,737,049,600,000,000,000</string>
     <string name="icon_image">Icon image</string>
     <string name="part_of_universe">Part of universe</string>
     <string name="supercluster">Supercluster</string>
     <string name="cluster">Cluster</string>
-    <string name="almost_there">Almost there...</string>
+    <string name="almost_there">Almost there…</string>
     <string name="galaxy">Galaxy</string>
     <string name="star">Star</string>
     <string name="show_model">SHOW\nMODEL</string>
@@ -34,4 +35,6 @@
     <string name="water">Water</string>
     <string name="simple_life">Simple life</string>
     <string name="complex_life">Complex life</string>
+    <string name="generating_qr_code">Generating QR Code for:</string>
+    <string name="qr_empty">Nothing to read</string>
 </resources>

@@ -30,7 +30,7 @@ import java.util.Locale;
 public class QRScanner extends AppCompatActivity {
     private SurfaceView cameraView;
     private TextView barcodeInfo;
-    private static final int CAMERA_PREMISSION = 42;
+    private static final int CAMERA_PERMISSION = 42;
 
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
@@ -100,7 +100,7 @@ public class QRScanner extends AppCompatActivity {
 
     private void askForPermission() {
         String[] permissions = new String[]{Manifest.permission.CAMERA};
-        ActivityCompat.requestPermissions(this, permissions, CAMERA_PREMISSION);
+        ActivityCompat.requestPermissions(this, permissions, CAMERA_PERMISSION);
     }
 
     private void setBarcodeDetector(){
@@ -111,10 +111,10 @@ public class QRScanner extends AppCompatActivity {
 
             @Override
             public void receiveDetections(Detector.Detections<Barcode> detections) {
-                final SparseArray<Barcode> barcodes = detections.getDetectedItems();
+                final SparseArray<Barcode> barcodeArray = detections.getDetectedItems();
 
-                if (barcodes.size() != 0) {
-                    String value = barcodes.valueAt(0).rawValue;
+                if (barcodeArray.size() != 0) {
+                    String value = barcodeArray.valueAt(0).rawValue;
                     boolean isValid = validateConfig(value);
 
                     if(isValid){
@@ -151,7 +151,7 @@ public class QRScanner extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == CAMERA_PREMISSION) {
+        if (requestCode == CAMERA_PERMISSION) {
             for (int i = 0; i < permissions.length; i++) {
                 String permission = permissions[i];
                 int grantResult = grantResults[i];
@@ -160,7 +160,7 @@ public class QRScanner extends AppCompatActivity {
                     if (grantResult == PackageManager.PERMISSION_GRANTED) {
                         startCamera();
                     }else{
-                        requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PREMISSION);
+                        requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION);
                     }
                 }
             }
@@ -197,7 +197,7 @@ public class QRScanner extends AppCompatActivity {
                     barcodeInfo.post(new Runnable() {    // Use the post method of the TextView
                         public void run() {
                             barcodeInfo.setText(String.format(Locale.getDefault(), "Part of universe: %d\n" +
-                                    "Supercluster: %d\n" +
+                                    "SuperCluster: %d\n" +
                                     "Cluster: %d\n" +
                                     "Galaxy: %d\n" +
                                     "Star: %d", _partOfUniverse, _superCluster, _cluster, _galaxy, _star));

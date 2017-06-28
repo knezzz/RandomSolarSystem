@@ -18,6 +18,14 @@
         android:title="@string/type_f"
         app:showAsAction="never" />
     <item
+        android:id="@+id/find_G"
+        android:title="@string/type_g"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/find_K"
+        android:title="@string/type_k"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/get_qr_code"
         android:title="@string/get_qr"
         app:showAsAction="never" />

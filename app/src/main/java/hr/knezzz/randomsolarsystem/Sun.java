@@ -2,7 +2,6 @@ package hr.knezzz.randomsolarsystem;
 
 
 import android.graphics.Color;
-import android.util.Log;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -10,19 +9,34 @@ import java.util.Random;
 
 import hr.knezzz.randomsolarsystem.utils.Resources;
 
-public class Sun{
-    private BigInteger sunId;
+/**
+ * Sun class
+ */
+class Sun{
+    private final BigInteger sunSeed;
     private BigInteger sunMass;
     private int sunColor;
-    String name;
+    private String name;
     private double size;
-    int sun_type;
-    Random rand;
+    private int sun_type;
+    private final Random rand;
+    private int numberOfPlanets;
 
-    public Sun(BigInteger sunId){
-        this.sunId = sunId;
-        rand = new Random(sunId.intValue());
+    public Sun(BigInteger sunSeed){
+        this.sunSeed = sunSeed;
+        rand = new Random(sunSeed.intValue());
         findSun();
+        findPlanets();
+    }
+
+    private void findPlanets(){
+        int maxNumberOfPlanets = 3*(9-getIntType());
+        int minNumberOfPlanets = (8-getIntType()) > 3 ? (8-getIntType()) : 3;
+        numberOfPlanets = rand.nextInt(maxNumberOfPlanets) + minNumberOfPlanets;
+    }
+
+    public int getPlanetsCount(){
+        return numberOfPlanets;
     }
 
     public static int getSunType(BigInteger sunId){
@@ -110,7 +124,7 @@ public class Sun{
     private static int findType(int typeSeed){
         int type;
 
-        if(typeSeed < 3){ // Chances : 0.00003%  // There is still about 5,534,023,222,110 of them...
+        if(typeSeed < 3){ // Chances : 0.00003%  // There is still about 13,510,798,882,111,488,000,000 of them...
             type = Resources.STAR_TYPE_O;
         }else if(typeSeed < 13000){ // Chances : 0.13%
             type = Resources.STAR_TYPE_B;
@@ -186,7 +200,6 @@ public class Sun{
      */
     public BigInteger getSunMassInKg(){
         BigInteger massInKg = new BigInteger("1989000000000000000000000000000").multiply(sunMass);
-        Log.d("Sun size calculation", "Size: " + sunMass + " conversion to km : " + massInKg);
         return massInKg;
     }
 
@@ -204,7 +217,6 @@ public class Sun{
      */
     public BigDecimal getSunSizeInKm(){
         BigDecimal sizeInKm = new BigDecimal(size).multiply(new BigDecimal("695700"));
-        Log.d("Sun size calculation", "Size: " + size + " conversion to km : " + sizeInKm);
         return sizeInKm.setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 
@@ -217,17 +229,20 @@ public class Sun{
         int maxSunSize;
 
         if(smallModel){
-            minSunSize = 30;
-            maxSunSize = 80;
+            minSunSize = 120;
+            maxSunSize = 200;
         }else{
-            minSunSize = 200;
-            maxSunSize = 1100;
+            minSunSize = 400;
+            maxSunSize = 1500;
         }
 
         double sunRatio = getSunSize() / Resources.BIGGEST_SUN;
 
-        int sunSizeModel = (int)(((maxSunSize-minSunSize) * sunRatio) + minSunSize);
+        return (int)(((maxSunSize-minSunSize) * sunRatio) + minSunSize);
+    }
 
-        return sunSizeModel;
+    @Override
+    public String toString(){
+        return String.format("Sun type [%s]\nSun size (Solar Radius) [%.2f]\nSun mass (Solar Mass) [%s]\nNumber of planets [%d]", getType(), getSunSize(), getSunMass(), getPlanetsCount());
     }
 }

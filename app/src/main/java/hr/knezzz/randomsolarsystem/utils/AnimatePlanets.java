@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import hr.knezzz.randomsolarsystem.Planet;
 
@@ -17,18 +18,17 @@ import hr.knezzz.randomsolarsystem.Planet;
  * Util class for animating planets.
  */
 public class AnimatePlanets extends Thread{
-    boolean isAnimating = false;
-    RelativeLayout solarCanvas;
-    Context context;
-    ArrayList<Planet> planets;
-    int positionX;
-    int positionY;
-    ArrayList<CardView> allViews = new ArrayList<>();
+    private RelativeLayout solarCanvas;
+    private Context context;
+    private ArrayList<PlanetView> planets;
+    private int positionX;
+    private int positionY;
+    private ArrayList<CardView> allViews = new ArrayList<>();
 
     public AnimatePlanets(){
     }
 
-    public void prepareForAnimation(RelativeLayout solarCanvas, Context context, ArrayList<Planet> planets, int x, int y){
+    public void prepareForAnimation(RelativeLayout solarCanvas, Context context, ArrayList<PlanetView> planets, int x, int y){
         this.solarCanvas = solarCanvas;
         this.context = context;
         this.planets = planets;
@@ -53,17 +53,11 @@ public class AnimatePlanets extends Thread{
      You can use these functions to create your own ViewAnimation, OpenGL function, or if you're using canvas, to set the position of the paddle during the onDraw() event.
      */
     public void startAnimation() {
-        isAnimating = true;
-
-        for (Planet p : planets){
-            p.startAnimation();
-        }
-
-        //while(canAnimate()){
-        for (Planet p : planets) {
+        for (PlanetView pv : planets) {
+            Planet p = pv.getPlanet();
             int y = positionY - 100 - (p.getModelSize(true) / 2);
             int x = positionX - (p.getModelSize(true) / 2);
-            double timePosition = ((double)360 / (double)p.getPlanetyear()) * (p.getRotationLocation() % p.getPlanetyear());
+            double timePosition = ((double)360 / (double)p.getPlanetYear()) * (p.getRotationLocation() % p.getPlanetYear());
             final float calcX = (float)(x + (float) p.getSunDistance() * Math.cos(timePosition));
             final float calcY = (float)(y + (float) p.getSunDistance() * Math.sin(timePosition));
 
@@ -72,54 +66,95 @@ public class AnimatePlanets extends Thread{
             params.height = p.getModelSize(true);
             params.width = p.getModelSize(true);
 
-            final CardView planetView;
+          //  final ImageView planetView;
+            final CardView simplePlanetView;
             Handler handler = new Handler(Looper.getMainLooper());
 
-            if(p.getPlanetView() == null) {
-                planetView = new CardView(context);
-                planetView.setRadius(p.getModelSize(true) / 2);
-                planetView.setCardBackgroundColor(p.getPlanetColor());
-                planetView.setX(calcX);
-                planetView.setY(calcY);
-                planetView.setLayoutParams(params);
-                handler.post(new Runnable() {
+//            if(pv.getPlanetView() == null) {
+//                planetView = new ImageView(context);
+//                planetView.setImageBitmap(pv.getPlanetImage());
+//                planetView.setX(calcX);
+//                planetView.setY(calcY);
+//                planetView.setLayoutParams(params);
+//                handler.post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        solarCanvas.addView(planetView);
+//                    }
+//                });
+//                allViews.add(planetView);
+//                pv.setPlanetView(planetView);
+//            }else{
+//                planetView = pv.getPlanetView();
+//            }
+
+            if(pv.getSimplePlanetView() == null){
+                simplePlanetView = new CardView(context);
+                simplePlanetView.setCardBackgroundColor(p.getPlanetColor());
+                simplePlanetView.setX(calcX);
+                simplePlanetView.setY(calcY);
+                simplePlanetView.setRadius(p.getModelSize(true)/2);
+                simplePlanetView.setLayoutParams(params);
+                handler.post(new Runnable(){
                     @Override
-                    public void run() {
-                        solarCanvas.addView(planetView);
+                    public void run(){
+                        solarCanvas.addView(simplePlanetView);
                     }
                 });
-                allViews.add(planetView);
-                p.setPlanetView(planetView);
+                allViews.add(simplePlanetView);
+                pv.setSimplePlanetView(simplePlanetView);
             }else{
-                planetView = p.getPlanetView();
+                simplePlanetView = pv.getSimplePlanetView();
             }
+
+//            pv.generateTerrain(new PlanetView.TerrainGenerationDone(){
+//                @Override
+//                public void imageUpdate(Bitmap image){
+//                    planetView.setImageBitmap(image);
+//                }
+//
+//                @Override
+//                public void imageDone(Bitmap image){
+//                    planetView.setImageBitmap(image);
+//                }
+//            }, p.getModelSize(false), 2);
 
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    planetView.setX(calcX);
-                    planetView.setY(calcY);
+                    simplePlanetView.setX(calcX);
+                    simplePlanetView.setY(calcY);
                 }
             });
         }
     }
 
-   /* public boolean canAnimate(){
-        return isAnimating;
-    }*/
-
     @Override
     public void interrupt() {
         super.interrupt();
 
-        isAnimating = false;
-        for(Planet p : planets) {
+        for(PlanetView p : planets) {
             p.setPlanetView(null);
         }
 
-        for(CardView view : allViews){
-            solarCanvas.removeView(view);
+        Iterator<CardView> viewIterator = allViews.iterator();
+        if(viewIterator.hasNext()){
+            do{
+                solarCanvas.removeView(viewIterator.next());
+            }while(viewIterator.hasNext());
         }
+    }
+
+    public void resetAnimation(){
+        solarCanvas = null;
+        context = null;
+        planets.clear();
+        planets = new ArrayList<>();
+        allViews.clear();
+        allViews = new ArrayList<>();
+
+        positionX = 0;
+        positionY = 0;
     }
 
     public void hidePlanets() {

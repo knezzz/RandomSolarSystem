@@ -6,16 +6,20 @@ package hr.knezzz.randomsolarsystem.utils;
 public interface Resources {
     // solar radius = 695,700km
     // solar mass = 1.989 × 10^30 kg
-    boolean DEVELOPER_MODE = true;
+    boolean DEVELOPER_MODE = false;
+    boolean GENERATE_TERRAIN = true;
 
     String PLANET_INTENT_WHOLE_PLANET = "PLANET";
+    String PLANET_INTENT_RECEVER = "REC";
 
     String PLANET_NAME_LETTERS = "abcdefghijklmnopqrstuvwxyzaeiouyhdaeiou";
 
     int PLANET_ANIMATION_TIME = 16;//16ms for 60fps
 
-    long SHORTEST_SUN_DISTANCE = 2200L;
-    long BIGGEST_SUN_DISTANCE = 2300L;
+    double SHORTEST_SUN_DISTANCE = 0.005;
+    double BIGGEST_SUN_DISTANCE = 84000;
+
+    long MODEL_BIGGEST_DISTANCE = 600;
 
     int SMALLEST_SMALL_PLANET = 4096; //10 000km diameter 2^12
     int BIGGEST_SMALL_PLANET = 65536;//393216; //400 000km diameter 2^17+2^18
@@ -24,9 +28,6 @@ public interface Resources {
     int BIGGEST_BIG_PLANET = 393216; //400 000km diameter 2^17+2^18
 
     double BIGGEST_SUN = 10.8;
-
-    int PLANET_MAX_TEMPERATURE  = 1300;
-    int PLANET_MIN_TEMPERATURE  = -270;
 
     int STAR_TYPE_O = 1;
     /*
@@ -86,7 +87,7 @@ public interface Resources {
     */
 
 
-    int STAR_SUBTYPE_EXREMLY_LUMINOUS_SUPERGIANT = 0;
+    int STAR_SUBTYPE_EXTREMELY_LUMINOUS_SUPERGIANT = 0;
     int STAR_SUBTYPE_LUMINOUS_SUPERGIANT = 1;
     int STAR_SUBTYPE_LESS_LUMINOUS_SUPERGIANT = 3;
     int STAR_SUBTYPE_BRIGHT_GIANT = 4;

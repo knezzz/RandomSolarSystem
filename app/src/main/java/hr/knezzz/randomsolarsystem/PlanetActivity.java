@@ -1,35 +1,44 @@
 package hr.knezzz.randomsolarsystem;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Display;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.Locale;
 
+import hr.knezzz.randomsolarsystem.utils.PlanetView;
 import hr.knezzz.randomsolarsystem.utils.Resources;
 import hr.knezzz.randomsolarsystem.utils.Utils;
 
 
 public class PlanetActivity extends AppCompatActivity {
-    private TextView planetSize, planetTemperature, planetSatellites, goldilocksText, waterText, simpleLifeText, complexLifeText;
+    private static final String TAG = "PlanetActivity";
+    private static int screenWidth;
+    private TextView planetSize, planetTemperature, planetSatellites, goldilocksText, waterText, simpleLifeText, complexLifeText, planetDistanceText;
     private CardView planetModel;
+    private ImageView planetImage;
 
-    private Planet myPlanet;
+    private PlanetView myPlanet;
     private Toolbar toolbar;
     private int planetColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        LeakCanary.install(getApplication());
         setContentView(R.layout.activity_planet);
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -38,7 +47,7 @@ public class PlanetActivity extends AppCompatActivity {
         Intent extra = getIntent();
 
         if(extra.hasExtra(Resources.PLANET_INTENT_WHOLE_PLANET)){
-            myPlanet = (Planet) extra.getExtras().get(Resources.PLANET_INTENT_WHOLE_PLANET);
+            myPlanet = (PlanetView) extra.getExtras().get(Resources.PLANET_INTENT_WHOLE_PLANET);
         }
 
         if(myPlanet == null){
@@ -46,31 +55,73 @@ public class PlanetActivity extends AppCompatActivity {
             finish();
         }
 
-        planetColor = myPlanet.getPlanetColor();
+        myPlanet.resetView(this);
+        planetColor = myPlanet.getPlanet().getPlanetColor();
         setUpViews();
         setPlanetColor();
         showPlanetInfo();
 
-        getSupportActionBar().setTitle(myPlanet.getName());
+        //noinspection ConstantConditions
+        getSupportActionBar().setTitle(myPlanet.getPlanet().getName());
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
-    private void showPlanetInfo() {
-        planetSize.setText(String.format(Locale.getDefault(), "%d", myPlanet.getPlanetSize()));
-        planetTemperature.setText(String.format(Locale.getDefault(), "%d", myPlanet.getTemperature()));
-        planetSatellites.setText(String.format(Locale.getDefault(), "%d", myPlanet.getSatellites()));
-
-        colorBooleanTextfield(goldilocksText, myPlanet.getGoldilocksZone());
-        colorBooleanTextfield(waterText, myPlanet.getWater());
-        colorBooleanTextfield(simpleLifeText, myPlanet.getSimpleLife());
-        colorBooleanTextfield(complexLifeText, myPlanet.getComplexLife());
-
-        SolarMath.setUpPlanet(myPlanet, planetModel);
-       // setUpModel();
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        myPlanet.stopRender();
     }
 
-    private void colorBooleanTextfield(TextView tv, boolean bool){
+    private void showPlanetInfo() {
+        planetSize.setText(String.format(Locale.getDefault(), "%d", myPlanet.getPlanet().getPlanetSize()));
+        planetTemperature.setText(String.format(Locale.getDefault(), "%.2f", myPlanet.getPlanet().getTemperature()));
+        planetSatellites.setText(String.format(Locale.getDefault(), "%d", myPlanet.getPlanet().getSatellites()));
+        planetDistanceText.setText(String.format(Locale.getDefault(), "%.0f", myPlanet.getPlanet().getPlanetDistanceInKm()));
+
+        colorBooleanTextField(goldilocksText, myPlanet.getPlanet().getGoldilocksZone());
+        colorBooleanTextField(waterText, myPlanet.getPlanet().getWater());
+        colorBooleanTextField(simpleLifeText, myPlanet.getPlanet().getSimpleLife());
+        colorBooleanTextField(complexLifeText, myPlanet.getPlanet().getComplexLife());
+
+        SolarMath.setUpPlanet(myPlanet.getPlanet(), planetModel);
+        if(Resources.GENERATE_TERRAIN){
+            drawPlanet(32);
+        }
+    }
+
+    private void drawPlanet(final double quality){
+        Thread planetThread = myPlanet.generateTerrain(new PlanetView.TerrainGenerationDone(){
+            @Override
+            public void imageUpdate(final Bitmap image){
+                runOnUiThread(new Runnable(){
+                    @Override
+                    public void run(){
+                        planetImage.setImageBitmap(image);
+                    }
+                });
+            }
+
+            @Override
+            public void imageDone(final Bitmap image){
+                runOnUiThread(new Runnable(){
+                    @Override
+                    public void run(){
+                        planetImage.setImageBitmap(image);
+                        if(quality >= .2){
+                            drawPlanet(quality / 2);
+                        }
+                    }
+                });
+            }
+        }, myPlanet.getPlanet().getModelSize(true)*2, quality);
+
+        if(planetThread != null && !planetThread.isAlive()){
+            planetThread.start();
+        }
+    }
+
+    private void colorBooleanTextField(TextView tv, boolean bool){
         tv.setText(Boolean.toString(bool).toUpperCase());
 
         if(bool){
@@ -88,11 +139,37 @@ public class PlanetActivity extends AppCompatActivity {
         waterText = (TextView) findViewById(R.id.planet_info_water_text);
         simpleLifeText = (TextView) findViewById(R.id.planet_info_life_text);
         complexLifeText = (TextView) findViewById(R.id.planet_info_complexlife_text);
+        planetDistanceText = (TextView) findViewById(R.id.planet_info_distance_text);
 
-        planetModel = (CardView) findViewById(R.id.planet_model);
+        planetImage = (ImageView) findViewById(R.id.planet_image_view);
+        planetModel = (CardView)findViewById(R.id.planet_model);
+
+        if(Resources.GENERATE_TERRAIN){
+            planetModel.setVisibility(View.GONE);
+            planetImage.setMinimumHeight(getScreenWidth(this));
+            planetImage.setMinimumWidth(getScreenWidth(this));
+            planetImage.setScaleType(ImageView.ScaleType.FIT_XY);
+            planetImage.setTransitionName("planetView" + myPlanet.getPlanet().getName());
+        }else{
+            planetImage.setVisibility(View.GONE);
+            planetModel.setTransitionName("planetView" + myPlanet.getPlanet().getName());
+            planetModel.setCardBackgroundColor(myPlanet.getPlanet().getPlanetColor());
+        }
     }
 
-    public void setPlanetColor() {
+    public static int getScreenWidth(Context c) {
+        if (screenWidth == 0) {
+            WindowManager wm = (WindowManager) c.getSystemService(Context.WINDOW_SERVICE);
+            Display display = wm.getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+            screenWidth = size.x;
+        }
+
+        return screenWidth;
+    }
+
+    private void setPlanetColor() {
         toolbar.setBackgroundColor(planetColor);
 
         if(Utils.isLollipop()) {

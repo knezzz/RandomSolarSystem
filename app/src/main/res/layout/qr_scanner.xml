@@ -9,28 +9,21 @@
         android:id="@+id/titleLayout"
         android:layout_width="match_parent"
         android:orientation="vertical"
+        android:gravity="center"
         android:layout_weight="1"
         android:layout_height="0dp">
-
-        <RelativeLayout
-            android:padding="20dp"
+        <TextView
+            android:id="@+id/code_info"
             android:gravity="center"
+            android:layout_marginTop="14dp"
+            android:text="@string/qr_empty"
+            android:layout_height="wrap_content"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:id="@+id/code_info"
-                android:gravity="center"
-                android:layout_marginTop="14dp"
-                android:text="Nothing to read"
-                android:layout_height="wrap_content"
-                android:layout_width="match_parent"
-                android:textSize="16sp"
-                android:textColor="@android:color/secondary_text_dark" />
-        </RelativeLayout>
+            android:textSize="16sp"
+            android:textColor="@android:color/secondary_text_dark" />
     </LinearLayout>
 
     <SurfaceView
-        android:layout_below="@id/titleLayout"
         android:layout_width="match_parent"
         android:layout_weight="3"
         android:layout_height="0dp"

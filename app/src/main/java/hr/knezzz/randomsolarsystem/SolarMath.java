@@ -10,9 +10,6 @@ import android.widget.RelativeLayout;
  * Util class that calculates sun animations
  */
 public class SolarMath {
-    public SolarMath(){
-    }
-
     public static void animateSun(boolean expand, int marginTop, Sun sun, final CardView sunView) {
         int sunSizeList = sun.getModelSize(true);
         int sunSizeModel = sun.getModelSize(false);

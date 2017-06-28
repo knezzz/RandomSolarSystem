@@ -15,15 +15,17 @@ import android.support.annotation.IdRes;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +34,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -49,17 +52,18 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import hr.knezzz.randomsolarsystem.utils.PlanetView;
 import hr.knezzz.randomsolarsystem.utils.Resources;
 import hr.knezzz.randomsolarsystem.utils.Utils;
 
-public class SolarActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
-    public static final int QR_CODE_REQUEST = 1;
-    DrawerLayout drawer;
-    FloatingActionButton fab;
+public class SolarActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
+    private static final int QR_CODE_REQUEST = 1;
+    private DrawerLayout drawer;
+    private FloatingActionButton fab;
 
     private static final String TAG = "SolarActivity";
-    private ArrayList<Planet> planets;
-    private long supercluster, cluster, galaxy;
+    private ArrayList<PlanetView> planets;
+    private long superCluster, cluster, galaxy;
     private long partOfUniverse;
     private long star;
     private Sun sun;
@@ -74,10 +78,14 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
     private Toolbar toolbar;
     private TextView toolbarTitle;
     private NavigationView navigationView;
-    private DecimalFormat format = new DecimalFormat("###,###");
+    private final DecimalFormat format = new DecimalFormat("###,###");
     private Bitmap qrCode = null;
 
-    private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
+    private FindSeed searchThread;
+
+    private boolean showModel = false;
+
+    private static final int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,7 +101,6 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         }
 
         super.onCreate(savedInstanceState);
-//        LeakCanary.install(getApplication());
         setContentView(R.layout.activity_solar);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -132,35 +139,51 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
             }
         });
 
-        if(SolarSingleton.getInstance().getSolarSeed() != null){
-            seedToString = SolarSingleton.getInstance().getSolarSeed();
-            startSolarSystem(false);
-        }else{
-            startSolarSystem(true);
-        }
-
-        adapter = new PlanetAdapter(this, this, R.layout.solarsystem_header, planets, sun, canvas);
+        adapter = new PlanetAdapter(this, this, planets, sun, canvas);
         layoutManager = new LinearLayoutManager(this);
         solarSystemRecyclerView.setLayoutManager(layoutManager);
         solarSystemRecyclerView.setAdapter(adapter);
+
+        if(SolarSingleton.getInstance().getSolarSeed() != null){
+            seedToString = SolarSingleton.getInstance().getSolarSeed();
+            updateSolarSystem(false);
+        }else{
+            updateSolarSystem(true);
+        }
     }
 
     /**
      * Change seed
      * @param generateNewSystem - generate random system (true) : generate from current seed (false)
      */
-    private void startSolarSystem(boolean generateNewSystem){
+    private void updateSolarSystem(boolean generateNewSystem){
         qrCode = null;
 
         if(generateNewSystem)
             getNewSolarSystem();//this.seed = BigInteger.valueOf(new Random().nextLong());
 
-        getSun();
+        Sun _sun = getSun();
         getSolarSystemPosition(seedToString);
         getPlanets(seedToString);
 
+        SolarSingleton.getInstance().setInstance(seedToString);
+        adapter.changeSolarSystem(planets, _sun);
+
         toolbarTitle.setText(String.format("%s", seedToString.replace(":", "")));
         setToolbarColors();
+    }
+
+    private ArrayList<PlanetView> getPlanetViews(ArrayList<Planet> planets){
+        ArrayList<PlanetView> views = new ArrayList<>();
+        if(planets == null || planets.isEmpty()){
+            return views;
+        }
+
+        for(Planet p : planets){
+            views.add(new PlanetView(p, this));
+        }
+
+        return views;
     }
 
     @Override
@@ -191,13 +214,13 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
 
         partOfUniverse = _partOfUniverse;//position.nextInt(100);//solarSeed.nextLong();
         galaxy = _galaxy;//position.nextInt(49000) + 1000;///solarSeed.nextInt(49000)+1000;
-        supercluster = _superCluster;//position.nextInt(131072) + 32768;//solarSeed.nextInt(131072) + 32768;
+        superCluster = _superCluster;//position.nextInt(131072) + 32768;//solarSeed.nextInt(131072) + 32768;
         cluster = _cluster;//position.nextInt(900) + 100;//solarSeed.nextInt(900)+100;
         star = _star;//(long) (new Random(_star).nextDouble()*515396075520L + 34359738368L);//new BigInteger("34359738368").add(BigInteger.valueOf((long) (solarSeed.nextFloat()*515396075520L)));
 
         setNavItemCount(R.id.galaxy, galaxy);
         setNavItemCount(R.id.cluster, cluster);
-        setNavItemCount(R.id.superCluster, supercluster);
+        setNavItemCount(R.id.superCluster, superCluster);
         setNavItemCount(R.id.star, star);
         setNavItemCount(R.id.part_of_universe, partOfUniverse);
     }
@@ -209,15 +232,10 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         solarSeed = new Random();
         partOfUniverse = solarSeed.nextInt(100);//solarSeed.nextLong();
         galaxy = solarSeed.nextInt(1000);///solarSeed.nextInt(49000)+1000;
-        supercluster = solarSeed.nextInt(131072 + 32768);//solarSeed.nextInt(131072) + 32768;
+        superCluster = solarSeed.nextInt(131072 + 32768);//solarSeed.nextInt(131072) + 32768;
         cluster = solarSeed.nextInt(50000);//solarSeed.nextInt(900)+100;
-        star = 1L;//((long)position.nextInt(255) * -1L);//It goes 256 times through loop so if all 256 times are 1 position will be 256-255 = 1; 549755813888
-        for(int i = 0; i < 256; i++){
-            star += solarSeed.nextInt(Integer.MAX_VALUE);
-        }
-        star += solarSeed.nextInt(255);
-
-        locationToStringSeed(partOfUniverse, supercluster, cluster, galaxy, star);
+        star = (long)(solarSeed.nextDouble() * 549755813888L);//549755813888
+        locationToStringSeed(partOfUniverse, superCluster, cluster, galaxy, star);
     }
 
     /**
@@ -228,16 +246,10 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         Random position = new Random();
         partOfUniverse = position.nextInt(100);//solarSeed.nextLong();
         galaxy = position.nextInt(1000);///solarSeed.nextInt(49000)+1000;
-        supercluster = position.nextInt(131072 + 32768);//solarSeed.nextInt(131072) + 32768;
+        superCluster = position.nextInt(131072 + 32768);//solarSeed.nextInt(131072) + 32768;
         cluster = position.nextInt(50000);//solarSeed.nextInt(900)+100;
-        star = 1L;////It goes 256 times through loop so if all 256 times are 0 position will be 0+1 = 1;
-
-        for(int i = 0; i < 256; i++){
-            star += position.nextInt(Integer.MAX_VALUE);
-        }
-        star += position.nextInt(255);
-
-        return partOfUniverse + ":" + supercluster + ":" + cluster + ":" + galaxy  + ":" +star;//BigInteger.valueOf(new Random().nextLong());
+        star = (long)(position.nextDouble() * 549755813888L);//549755813888 stars
+        return partOfUniverse + ":" + superCluster + ":" + cluster + ":" + galaxy  + ":" +star;//BigInteger.valueOf(new Random().nextLong());
     }
 
     /**
@@ -260,7 +272,7 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
     }
 
     /**
-     * Change titlebar color
+     * Change titleBar color
      */
     private void setToolbarColors(){
         toolbar.setBackgroundColor(sun.getSunColor());
@@ -280,31 +292,6 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         }
     }
 
-    /**
-     * Change seed
-     * @param generateNewSystem - generate random system (true) : generate from current seed (false)
-     */
-    private void updateSolarSystem(boolean generateNewSystem){
-        qrCode = null;
-
-        if(generateNewSystem)
-            getNewSolarSystem();//this.seed = BigInteger.valueOf(new Random().nextLong());
-
-        getSolarSystemPosition(seedToString);
-        getPlanets(seedToString);
-
-        SolarSingleton.getInstance().setInstance(seedToString);
-        adapter.changeSolarSystem(planets, getSun());
-
-        toolbarTitle.setText(String.format("%s", seedToString.replace(":", "")));
-        setToolbarColors();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
     @Override
     public void onBackPressed() {
         if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -320,15 +307,13 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         getMenuInflater().inflate(R.menu.solar, menu);
 
         setNavItemCount(R.id.part_of_universe, partOfUniverse);
-        setNavItemCount(R.id.superCluster, supercluster);
+        setNavItemCount(R.id.superCluster, superCluster);
         setNavItemCount(R.id.cluster, cluster);
         setNavItemCount(R.id.galaxy, galaxy);
         setNavItemCount(R.id.star, star);
 
         return true;
     }
-
-    FindSeed searchThread;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -350,6 +335,12 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
             case R.id.find_F:
                 type = Resources.STAR_TYPE_F;
                 break;
+            case R.id.find_G:
+                type = Resources.STAR_TYPE_G;
+                break;
+            case R.id.find_K:
+                type = Resources.STAR_TYPE_K;
+                break;
             case R.id.get_qr_code:
                 getSeedAsQRCode();
                 return super.onOptionsItemSelected(item);
@@ -357,18 +348,15 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
                 startActivityForResult(new Intent(this, QRScanner.class), QR_CODE_REQUEST);
                 return super.onOptionsItemSelected(item);
             default:
-                type = Resources.STAR_TYPE_K;
+                type = Resources.STAR_TYPE_M;
         }
 
         searchThread = new FindSeed(type);
-        //ExecutorService pool = Executors.newCachedThreadPool();
-      //  pool.submit(new FindSeed(type));
         searchThread.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
@@ -377,7 +365,7 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         if (id == R.id.part_of_universe) {
             changeSeedDialog("Part of the Universe", 100, partOfUniverse, 0);
         } else if (id == R.id.superCluster) {
-            changeSeedDialog("Super Cluster", 131072 + 32768, supercluster, 1);
+            changeSeedDialog("Super Cluster", 131072 + 32768, superCluster, 1);
         } else if (id == R.id.cluster) {
             changeSeedDialog("Cluster", 50000, cluster, 2);
         } else if (id == R.id.galaxy) {
@@ -398,48 +386,103 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
      * @param current - current value to show as hint
      * @param position - position in drawer
      */
-    private void changeSeedDialog(String title, long limit, long current, final int position){
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title);
+    private void changeSeedDialog(String title, final long limit, final long current, final int position){
+        final Dialog seedDialog = new Dialog(this);
+        seedDialog.setContentView(R.layout.dialog_change_seed);
 
-        builder.setMessage("limit ["+format.format(limit)+"]");
-        builder.setCancelable(true);
+        TextView titleTextView = (TextView) seedDialog.findViewById(R.id.dialog_title);
+        TextView subtitleTextView = (TextView) seedDialog.findViewById(R.id.dialog_subtitle);
+        final TextView infoTextView = (TextView) seedDialog.findViewById(R.id.dialog_info);
+        final EditText seedEditText = (EditText) seedDialog.findViewById(R.id.dialog_edit_text);
+        final TextInputLayout til = (TextInputLayout) seedDialog.findViewById(R.id.dialog_edit_text_hint);
+        Button positiveButton = (Button) seedDialog.findViewById(R.id.dialog_button);
 
-        final EditText input = new EditText(this);
-        input.setHint(format.format(current));
+        titleTextView.setText(title);
+        subtitleTextView.setText(String.format("Limit [%s]", format.format(limit)));
 
-        input.requestFocus();
+        seedEditText.requestFocus();
         final InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.toggleSoftInput(InputMethodManager.RESULT_SHOWN, 0);
 
-        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        seedEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
 
-        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+        seedDialog.setOnDismissListener(new DialogInterface.OnDismissListener(){
             @Override
-            public void onDismiss(DialogInterface dialog) {
+            public void onDismiss(DialogInterface dialogInterface){
                 imm.toggleSoftInput(InputMethodManager.RESULT_HIDDEN, 0);
             }
         });
 
-        builder.setPositiveButton("GO", new DialogInterface.OnClickListener() {
+        updateDialogInfo(current + "", infoTextView, position);
+
+        seedEditText.setHint(current + "");
+
+        seedEditText.addTextChangedListener(new TextWatcher(){
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String myseed = input.getText().toString();
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2){
 
-                if(myseed.equalsIgnoreCase("")) {
-                    return;
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2){
+                if(seedEditText.getText().toString().isEmpty()){
+                }else if(Long.parseLong(seedEditText.getText().toString()) <= limit){
+                    updateDialogInfo(seedEditText.getText().toString(), infoTextView, position);
+                }else if(Long.parseLong(seedEditText.getText().toString()) > limit){
+                    seedEditText.setText(String.format("%d", limit));
+                }else if(Long.parseLong(seedEditText.getText().toString()) < 0){
+                    seedEditText.setText("");
                 }
+            }
 
-                String[] seedasstring = seedToString.split(":");
-
-                seedasstring[position] = myseed;
-                locationToStringSeed(Long.parseLong(seedasstring[0]),Long.parseLong(seedasstring[1]),Long.parseLong(seedasstring[2]),Long.parseLong(seedasstring[3]),Long.parseLong(seedasstring[4]));
-                updateSolarSystem(false);
+            @Override
+            public void afterTextChanged(Editable editable){
+                if(editable.length() == 0){
+                    til.setHintEnabled(false);
+                    seedEditText.setHint(current + "");
+                }else{
+                    til.setHintEnabled(true);
+                    til.setHint(current + "");
+                }
             }
         });
 
-        builder.setView(input);
-        builder.show();
+
+        positiveButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                String _seed = seedEditText.getText().toString();
+                if(_seed.equalsIgnoreCase("")) {
+                    return;
+                }
+                String[] seedToStringArray = seedToString.split(":");
+
+                seedToStringArray[position] = _seed;
+                locationToStringSeed(Long.parseLong(seedToStringArray[0]),Long.parseLong(seedToStringArray[1]),Long.parseLong(seedToStringArray[2]),Long.parseLong(seedToStringArray[3]),Long.parseLong(seedToStringArray[4]));
+                updateSolarSystem(false);
+                seedDialog.dismiss();
+            }
+        });
+
+        seedDialog.show();
+    }
+
+    private void updateDialogInfo(String seed, TextView view, int position){
+        if(seed.equalsIgnoreCase("")) {
+            return;
+        }
+        String[] seedToStringArray = seedToString.split(":");
+
+        seedToStringArray[position] = seed;
+        view.setText(getSolarSystemInfo(Long.parseLong(seedToStringArray[0]),Long.parseLong(seedToStringArray[1]),Long.parseLong(seedToStringArray[2]),Long.parseLong(seedToStringArray[3]),Long.parseLong(seedToStringArray[4])));
+
+    }
+
+    private String getSolarSystemInfo(long l, long l1, long l2, long l3, long l4){
+        String _seed = l + ":" + l1 + ":" + l2 + ":" + l3  + ":" +l4;
+        Sun _sun = new Sun(stringToSeed(_seed));
+
+        return _sun.toString();
     }
 
     /**
@@ -461,25 +504,35 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         Planet lastPlanet = null;
 
         Random planetRandom = new Random(Long.parseLong(seed.split(":")[4]));
-        int solarSystemSize = 4 + planetRandom.nextInt(11);
+        int solarSystemSize = sun.getPlanetsCount();
         //TODO: Change.. find better way to get distance number.
-        long freeSpaceForPlanets = 70;//((Resources.BIGGEST_SUN_DISTANCE - Resources.SHORTEST_SUN_DISTANCE) + Resources.SHORTEST_SUN_DISTANCE) / solarSystemSize;
+        double freeSpaceForPlanets = ((double)(Resources.MODEL_BIGGEST_DISTANCE / solarSystemSize) / 2);//((Resources.BIGGEST_SUN_DISTANCE - Resources.SHORTEST_SUN_DISTANCE) + Resources.SHORTEST_SUN_DISTANCE) / solarSystemSize;
+        double assignedSpaceForPlanets;
+        int _sunSize = sun.getModelSize(true);
+        double lastDistance = _sunSize;
 
         for(int i = 1; i <= solarSystemSize; i++){
+            assignedSpaceForPlanets = freeSpaceForPlanets * i + lastDistance;
+
             String planetSeed = seed +":"+ i;
             long distance;
-            if(i == 1) {
-                distance = (long) (planetRandom.nextDouble() * ((freeSpaceForPlanets/2) * i)) + freeSpaceForPlanets/2;
-            }else{
-                distance = (long) ((planetRandom.nextDouble() * (freeSpaceForPlanets - lastPlanet.getModelSize(true))) + (freeSpaceForPlanets*i)) + lastPlanet.getModelSize(true);
-            }
-            Planet ssPlanet = new Planet(stringToSeed(planetSeed));
 
-            ssPlanet.setDistanceFromSun(distance);
+            if(i == 1) {
+                distance = (long) (planetRandom.nextDouble() * assignedSpaceForPlanets) + _sunSize;
+            }else{
+                distance = (long) ((planetRandom.nextDouble() * (assignedSpaceForPlanets-lastDistance)) + lastDistance + lastPlanet.getModelSize(true) + (_sunSize/2));
+            }
+
+            lastDistance = assignedSpaceForPlanets;
+            Planet ssPlanet = new Planet(stringToSeed(planetSeed), distance, sun.getIntType());
             lastPlanet = ssPlanet;
             Log.i("Creating planet", "Goldilocks ["+ (ssPlanet.getGoldilocksZone()?1:0) + "] Simple life [" + (ssPlanet.getSimpleLife()?1:0) + "] Complex life [" + (ssPlanet.getComplexLife()?1:0) + "] Seed ["+i+"] Name [" + ssPlanet.getName() + "]");
-            planets.add(ssPlanet);
+            PlanetView pv = new PlanetView(ssPlanet, this);
+            pv.resetView(this);
+            planets.add(pv);
         }
+
+        adapter.changeSolarSystem(planets, sun);
 
     /*    Collections.sort(planets, new Comparator<Planet>() {
             @Override
@@ -498,22 +551,18 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        qrCode = encodeAsBitmap(seedToString);
+                qrCode = encodeAsBitmap(seedToString);
 
-                        if (qrCode != null) {
-                            final Bitmap finalBitmap = qrCode;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    showImage(finalBitmap);
-                                    searchDialog.dismiss();
-                                }
-                            });
+                if (qrCode != null) {
+                    final Bitmap finalBitmap = qrCode;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showImage(finalBitmap);
+                            searchDialog.dismiss();
                         }
-                    } catch (WriterException e) {
-                        e.printStackTrace();
-                    }
+                    });
+                }
                 }
             }).start();
         }
@@ -540,15 +589,15 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         TextView solarSearchQRSeed = (TextView) qrDialog.findViewById(R.id.solar_seed_qr);
         solarSearchQRSeed.setText(seedToString);
 
-        final Dialog alertadd = new Dialog(this);
-        alertadd.setCancelable(false);
-        alertadd.addContentView(qrDialog, new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        alertadd.show();
+        final Dialog showQRDialog = new Dialog(this);
+        showQRDialog.setCancelable(false);
+        showQRDialog.addContentView(qrDialog, new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        showQRDialog.show();
 
-        return alertadd;
+        return showQRDialog;
     }
 
-    private Bitmap encodeAsBitmap(String str) throws WriterException {
+    private Bitmap encodeAsBitmap(String str){
         QRCodeWriter writer = new QRCodeWriter();
         int _size = Utils.getScreenHeight(SolarActivity.this)/3;
         try {
@@ -573,15 +622,13 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
     /**
      * Custom location to seed.
      * @param part - part of universe
-     * @param supercluster - super cluster
+     * @param superCluster - super cluster
      * @param cluster - cluster
      * @param galaxy - galaxy
      * @param star - star
-     * @return -  return seed based on location;
      */
-    private String locationToStringSeed(long part, long supercluster, long cluster, long galaxy, long star){
-        seedToString = part + ":" + supercluster + ":" + cluster + ":" + galaxy  + ":" +star;
-        return seedToString;
+    private void locationToStringSeed(long part, long superCluster, long cluster, long galaxy, long star){
+        seedToString = part + ":" + superCluster + ":" + cluster + ":" + galaxy  + ":" +star;
     }
 
     /**
@@ -593,19 +640,14 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
         return new BigInteger(seed.replace(":",""));
     }
 
-    boolean showModel = false;
-
     /**
-     * Toggle view between model and listview
+     * Toggle view between model and listView
      */
     private void toggleView(){
         if(!showModel){
-            layoutManager.scrollToPosition(0);//solarSystemRecyclerView, null, 0);
-            //   solarSystemView.setVisibility(View.GONE);
-            //         sunInfo.setVisibility(View.GONE);
+            layoutManager.scrollToPosition(0);
             menuActionToggle.setText("SHOW\nLIST");
             fab.hide();
-            //   solarSystemView.setPadding(0, sunSizeModel+100, 0, 0);
             new Timer().schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -620,12 +662,9 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
             }, 100);
             solarSystemRecyclerView.setLayoutFrozen(true);
         }else{
-            //          sunInfo.setVisibility(View.VISIBLE);
             layoutManager.smoothScrollToPosition(solarSystemRecyclerView, null, 0);
             menuActionToggle.setText("SHOW\nMODEL");
             adapter.toggleViews();
-            //   solarSystemView.setVisibility(View.VISIBLE);
-
             new Timer().schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -638,7 +677,7 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
                         }
                     });
                 }
-            }, 1000);
+            }, 200);
         }
 
         showModel = !showModel;
@@ -646,13 +685,8 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // Check which request we're responding to
         if (requestCode == QR_CODE_REQUEST) {
-            // Make sure the request was successful
             if (resultCode == RESULT_OK) {
-                // The user picked a contact.
-                // The Intent's data Uri identifies which contact was selected.
-
                 seedToString = data.getStringExtra("SEED");
                 Log.e(TAG, "Got :"+seedToString);
 
@@ -665,7 +699,7 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
 
                     final int _planet = Integer.parseInt(location[5]);
                     if(planets.size() >= _planet-1) {
-                        Planet currentPlanet = planets.get(_planet-1);
+                        PlanetView currentPlanet = planets.get(_planet-1);
                         Intent i = new Intent(this, PlanetActivity.class);
                         i.putExtra(Resources.PLANET_INTENT_WHOLE_PLANET, currentPlanet);
                         startActivity(i);
@@ -673,7 +707,6 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
                 }else {
                     updateSolarSystem(false);
                 }
-                // Do something with the contact here (bigger example below)
             }
         }
     }
@@ -685,7 +718,7 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
     *
     *
     *               Find seed class - extends AsyncTask for searching the new seed;
-    *                   made it so it uses all avaible cores for the search.
+    *                   made it so it uses all available cores for the search.
     *
     *
     ************************************************************************************************
@@ -694,7 +727,7 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
     class FindSeed extends AsyncTask<Void, String, Integer> {
         boolean searching = false;
         boolean foundStar = false;
-        int type;
+        final int type;
         private ProgressDialog progressDialog = null;
 
         public FindSeed(int type){
@@ -707,8 +740,6 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
 
         @Override
         protected void onPostExecute(Integer integer) {
-          //  super.onPostExecute(integer);
-
             if(foundStar){
                 final Snackbar bar = Snackbar.make(solarSystemRecyclerView, "Found after " + format.format(integer) + " stars", Snackbar.LENGTH_LONG);
                 bar.setAction("CLOSE", new View.OnClickListener() {
@@ -738,7 +769,7 @@ public class SolarActivity extends AppCompatActivity implements NavigationView.O
                     publishProgress(loopCount+"");
                 }
 
-                if(loopCount%82 == 0){
+                if(loopCount%142 == 0){
                     if(type == Resources.STAR_TYPE_O){
                         long _time = (System.currentTimeMillis()-startTime)/1000;
                         //450359962737049600000000000 <-- TODO:Total combinations
